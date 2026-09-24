@@ -138,7 +138,8 @@ Opciones recomendadas:
 | Plataforma | Por qué | Notas |
 |---|---|---|
 | **Google Cloud Run** (recomendado, ver §3) | Usa los créditos de Google; WebSocket/SSE; escala a cero fuera del evento; `deploy/cloudrun.sh` | Conexiones de hasta 60 min (se reconectan solas) |
-| **Render** / **Railway** / **Koyeb** | Deploy desde el repo con el `Dockerfile`, WebSocket OK | Los planes gratis se duermen: usar plan pago el día del evento |
+| **Railway** | `railway.json` incluido (Dockerfile + healthcheck). Variables: `GEMINI_API_KEY`, `CL_ADMIN_TOKEN`, `CL_SESSIONS_FILE=examples/sessions.yaml`, `CL_PUBLIC_URL` | ~US$ 5/mes (plan Hobby); WebSocket OK |
+| **Render** / **Koyeb** | Deploy desde el repo con el `Dockerfile`, WebSocket OK | Los planes gratis se duermen: usar plan pago el día del evento |
 | **Fly.io** | Contenedores cerca de la audiencia (región `gru`/`eze`), WebSocket OK | `fly launch` detecta el Dockerfile |
 | **Hugging Face Spaces (Docker)** | Gratis para demos | Puerto 7860 (`PORT=7860`), se duerme |
 | **VM** (e2-small, Droplet, Lightsail) | `docker compose up -d` con Redis y nginx | Control total, costo fijo bajo |
