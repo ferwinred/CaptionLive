@@ -1,0 +1,22 @@
+# Sessions created on start-up (CL_SESSIONS_FILE=examples/sessions.yaml).
+# Existing sessions keep their ingest key unless you set `ingest_key` here.
+sessions:
+  - id: main-stage
+    title: "Keynote: el futuro del open source"
+    room: Escenario principal
+    speaker: Ada Lovelace
+    source_lang: en
+    target_langs: [es, pt]
+    glossary: [Nerdearla, Kubernetes, eBPF, OpenTelemetry, Gemini, Gemma, DeepMind]
+  - id: sala-2
+    title: "Observabilidad con OpenTelemetry"
+    room: Sala 2
+    source_lang: es
+    target_langs: [en, pt]
+    glossary: [OpenTelemetry, Grafana, Prometheus, Loki, Tempo]
+  - id: sala-3
+    title: "Rust para developers de Python"
+    room: Sala 3
+    source_lang: en
+    target_langs: [es]
+    glossary: [Rust, PyO3, maturin, borrow checker, Cargo]

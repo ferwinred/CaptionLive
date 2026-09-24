@@ -1,0 +1,56 @@
+# Minimal Kubernetes deployment: Redis + N CaptionLive replicas + Service.
+# kubectl create secret generic captionlive --from-literal=GEMINI_API_KEY=... --from-literal=CL_ADMIN_TOKEN=...
+# kubectl apply -f deploy/kubernetes.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: captionlive-redis }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: captionlive-redis } }
+  template:
+    metadata: { labels: { app: captionlive-redis } }
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports: [{ containerPort: 6379 }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: captionlive-redis }
+spec:
+  selector: { app: captionlive-redis }
+  ports: [{ port: 6379 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: captionlive }
+spec:
+  replicas: 3
+  selector: { matchLabels: { app: captionlive } }
+  template:
+    metadata:
+      labels: { app: captionlive }
+      annotations: { prometheus.io/scrape: "true", prometheus.io/port: "8000" }
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: captionlive
+          image: ghcr.io/your-org/captionlive:latest
+          ports: [{ containerPort: 8000 }]
+          envFrom: [{ secretRef: { name: captionlive } }]
+          env:
+            - { name: CL_BROKER, value: redis }
+            - { name: CL_REDIS_URL, value: "redis://captionlive-redis:6379/0" }
+          readinessProbe: { httpGet: { path: /api/health, port: 8000 }, periodSeconds: 5 }
+          livenessProbe: { httpGet: { path: /api/health, port: 8000 }, periodSeconds: 15 }
+          resources:
+            requests: { cpu: 250m, memory: 256Mi }
+            limits: { memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: captionlive }
+spec:
+  selector: { app: captionlive }
+  ports: [{ port: 80, targetPort: 8000 }]

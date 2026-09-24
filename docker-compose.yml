@@ -1,0 +1,35 @@
+# Production-like stack: 2 CaptionLive replicas behind nginx, sharing state in Redis.
+#   cp .env.example .env   # set GEMINI_API_KEY and CL_ADMIN_TOKEN
+#   docker compose up -d --build
+#   open http://localhost:8080
+# Demo without API keys:  CL_ASR_PROVIDER=mock CL_MT_PROVIDER=mock docker compose up
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: [redis-data:/data]
+    restart: unless-stopped
+
+  app:
+    build: .
+    env_file: [.env]
+    environment:
+      CL_BROKER: redis
+      CL_REDIS_URL: redis://redis:6379/0
+      CL_SESSIONS_FILE: ${CL_SESSIONS_FILE:-examples/sessions.yaml}
+      CL_ASR_PROVIDER: ${CL_ASR_PROVIDER:-gemini}
+      CL_MT_PROVIDER: ${CL_MT_PROVIDER:-gemini}
+    depends_on: [redis]
+    deploy:
+      replicas: 2
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    volumes: ["./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro"]
+    ports: ["8080:80"]
+    depends_on: [app]
+    restart: unless-stopped
+
+volumes:
+  redis-data:
