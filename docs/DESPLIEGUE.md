@@ -32,21 +32,60 @@ docker compose up -d --scale app=4   # más réplicas
 `deploy/nginx.conf` ya tiene la configuración correcta para WebSocket (ingesta) y SSE
 (sin buffering, timeouts de 1 h). Poné delante tu terminador TLS (Caddy, Traefik, un LB).
 
-## 3. Google Cloud Run (recomendado para el evento)
+## 3. Google Cloud Run con los créditos de Google (recomendado)
+
+**Paso 0: créditos y proyecto (una sola vez, ~5 min)**
+
+1. Canjeá los créditos de Google Developers Platform en una **cuenta de facturación** de
+   Google Cloud (el mail de la Vibeathon trae el enlace).
+2. Creá un proyecto (<https://console.cloud.google.com/projectcreate>) y **vinculalo a esa
+   cuenta de facturación**, así Cloud Run y Gemini se descuentan de los créditos.
+3. Creá la API key de Gemini **en ese mismo proyecto**: <https://aistudio.google.com/apikey>
+   → *Create API key* → elegir el proyecto.
+
+**Paso 1: desplegar desde Cloud Shell (gratis, ya trae `gcloud`)**
+
+Abrí <https://shell.cloud.google.com> y ejecutá:
 
 ```bash
-export PROJECT=mi-proyecto GEMINI_API_KEY=... CL_ADMIN_TOKEN=...
-./deploy/cloudrun.sh
+gcloud config set project TU_PROYECTO
+git clone https://github.com/ferwinred/CaptionLive && cd CaptionLive
+./deploy/cloudrun.sh            # pide la API key de Gemini y genera el token de admin
 ```
 
-- Crea los secretos en Secret Manager, despliega desde el código fuente con timeouts de
-  60 min (WebSocket/SSE), `--no-cpu-throttling` y `min-instances=1` (sin arranques en frío
-  durante las charlas), y configura `CL_PUBLIC_URL`.
-- **Una instancia** (broker en memoria) alcanza para decenas de salas y cientos/miles de
-  espectadores. Para más, creá un **Memorystore for Redis** + conector VPC y pasá
-  `REDIS_URL=redis://IP:6379/0 VPC_CONNECTOR=mi-conector MAX_INSTANCES=10`.
-- Las conexiones duran como máximo 60 min en Cloud Run: el navegador y `captionlive ingest`
-  se reconectan solos y la audiencia reanuda sin perder subtítulos (`Last-Event-ID`).
+El script habilita las APIs, guarda los secretos en Secret Manager, construye la imagen,
+despliega en `southamerica-east1` (São Paulo, cerca de Buenos Aires) e imprime:
+
+- la URL del backend (`https://captionlive-xxxx.run.app`) y el **token de admin**;
+- los enlaces a la web en GitHub Pages ya conectada al backend (`...github.io/CaptionLive/?api=...`).
+
+**Paso 2 (opcional): dejar Pages apuntando siempre al backend.** En GitHub: *Settings →
+Secrets and variables → Actions → Variables → New variable* `CAPTIONLIVE_API_URL` = URL del
+backend, y luego *Actions → Deploy web to GitHub Pages → Run workflow*. Los QR que genera el
+backend ya incluyen `?api=` automáticamente.
+
+**Cómo cuida los créditos**
+
+| Modo | Comando | Costo aproximado |
+|---|---|---|
+| Fuera del evento | `./deploy/cloudrun.sh` | Escala a cero: ~US$ 0 sin uso; se paga solo mientras hay audio o espectadores conectados |
+| Día del evento | `EVENT_MODE=1 ./deploy/cloudrun.sh` | 1 instancia siempre lista (sin arranque en frío): ~US$ 1–2 por día |
+| Gemini | — | ≈ US$ 0,60 por hora de charla por sala (original + 2 idiomas) |
+
+Los US$ 25 alcanzan para ~40 horas de charla subtitulada. Configurá una **alerta de
+presupuesto** en *Billing → Budgets & alerts* (por ejemplo al 50 % y 90 %).
+
+**Notas**
+
+- Sin Redis corre una sola instancia (suficiente para decenas de salas). Las sesiones del
+  YAML se recrean al iniciar y las **claves de ingesta son estables** (derivadas del token de
+  admin), así que los enlaces de escenario no cambian aunque el servicio se reinicie. Las
+  sesiones creadas desde el panel se pierden si la instancia escala a cero: para el evento
+  usá `EVENT_MODE=1`, o agregá un Redis gratuito (p. ej. Upstash) con
+  `REDIS_URL=rediss://... ./deploy/cloudrun.sh`.
+- Las conexiones de Cloud Run duran hasta 60 min; el escenario y la audiencia se reconectan
+  solos sin perder subtítulos.
+- Para actualizar después de cambios en el código: `git pull && ./deploy/cloudrun.sh`.
 
 ## 4. Kubernetes
 
@@ -98,7 +137,7 @@ Opciones recomendadas:
 
 | Plataforma | Por qué | Notas |
 |---|---|---|
-| **Google Cloud Run** (recomendado) | Usa los créditos de Google; WebSocket/SSE; escala a cero fuera del evento; `deploy/cloudrun.sh` | Conexiones de hasta 60 min (se reconectan solas) |
+| **Google Cloud Run** (recomendado, ver §3) | Usa los créditos de Google; WebSocket/SSE; escala a cero fuera del evento; `deploy/cloudrun.sh` | Conexiones de hasta 60 min (se reconectan solas) |
 | **Render** / **Railway** / **Koyeb** | Deploy desde el repo con el `Dockerfile`, WebSocket OK | Los planes gratis se duermen: usar plan pago el día del evento |
 | **Fly.io** | Contenedores cerca de la audiencia (región `gru`/`eze`), WebSocket OK | `fly launch` detecta el Dockerfile |
 | **Hugging Face Spaces (Docker)** | Gratis para demos | Puerto 7860 (`PORT=7860`), se duerme |
@@ -111,6 +150,7 @@ Todas las variables llevan el prefijo `CL_` (también se leen de un archivo `.en
 | Variable | Default | Descripción |
 |---|---|---|
 | `CL_ADMIN_TOKEN` | `change-me` | Token del panel/API de administración. **Cambialo.** |
+| `CL_INGEST_SECRET` | = admin token | Secreto del que se derivan claves de ingesta estables |
 | `CL_PUBLIC_URL` | — | URL pública (QR y enlaces del panel) |
 | `CL_HOST` / `CL_PORT` | `0.0.0.0` / `8000` | Bind del servidor (`PORT` en la imagen Docker) |
 | `CL_CORS_ORIGINS` | `["*"]` | Orígenes permitidos (JSON) |

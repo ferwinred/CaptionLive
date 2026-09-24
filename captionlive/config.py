@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     port: int = 8000
     public_url: str = ""  # e.g. https://captions.nerdearla.com (used for QR codes)
     admin_token: str = "change-me"  # protects /api/admin/* and the operator UI
+    # New sessions get an ingest key derived from this secret (default: the admin token), so
+    # stage links survive restarts even without Redis (e.g. Cloud Run scaling to zero).
+    ingest_secret: str = ""
     cors_origins: list[str] = Field(default_factory=lambda: ["*"])
 
     # --- State / fan-out ----------------------------------------------------
