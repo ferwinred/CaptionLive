@@ -74,6 +74,36 @@ captionlive serve
 - Cualquier servidor OpenAI-compatible sirve para traducir: Ollama, vLLM, llama.cpp, LM Studio.
 - Se puede mezclar: ASR en Gemini y traducción local (o al revés).
 
+## 6. Front estático (GitHub Pages / Vercel / Netlify) + backend aparte
+
+La web (audiencia, escenario, panel, overlay) también se puede publicar como sitio estático:
+
+```bash
+python scripts/build_static.py --out site                                   # modo demo
+python scripts/build_static.py --out site --api https://captions.example.org  # con backend
+```
+
+- **Sin backend** el sitio corre en **modo demo**: simula 3 salas en vivo en el navegador
+  (sincronizadas por reloj entre dispositivos), con panel, overlay, exportación y resumen.
+- **Con backend**: `?api=https://tu-backend` en cualquier URL (se recuerda en el navegador) o el
+  botón *Conectar a un servidor…*. El backend ya permite CORS (`CL_CORS_ORIGINS`).
+- **GitHub Pages**: el workflow `.github/workflows/pages.yml` construye y publica en la rama
+  `gh-pages` (activar en *Settings → Pages → Deploy from a branch → gh-pages*). La variable del
+  repositorio `CAPTIONLIVE_API_URL` fija el backend por defecto.
+- **Vercel**: importar el repositorio; `vercel.json` ya define el build y la carpeta de salida.
+
+El **backend no puede correr en Pages ni en funciones serverless** (Vercel/Netlify): necesita
+conexiones largas (WebSocket de audio de hasta horas, SSE) y un proceso vivo por sala.
+Opciones recomendadas:
+
+| Plataforma | Por qué | Notas |
+|---|---|---|
+| **Google Cloud Run** (recomendado) | Usa los créditos de Google; WebSocket/SSE; escala a cero fuera del evento; `deploy/cloudrun.sh` | Conexiones de hasta 60 min (se reconectan solas) |
+| **Render** / **Railway** / **Koyeb** | Deploy desde el repo con el `Dockerfile`, WebSocket OK | Los planes gratis se duermen: usar plan pago el día del evento |
+| **Fly.io** | Contenedores cerca de la audiencia (región `gru`/`eze`), WebSocket OK | `fly launch` detecta el Dockerfile |
+| **Hugging Face Spaces (Docker)** | Gratis para demos | Puerto 7860 (`PORT=7860`), se duerme |
+| **VM** (e2-small, Droplet, Lightsail) | `docker compose up -d` con Redis y nginx | Control total, costo fijo bajo |
+
 ## Referencia de configuración
 
 Todas las variables llevan el prefijo `CL_` (también se leen de un archivo `.env`).

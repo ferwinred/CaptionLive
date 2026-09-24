@@ -125,12 +125,15 @@ def create_app(
         return data
 
     # ------------------------------------------------------------------ pages
-    for route, page in {
+    pages = {
         "/": "index.html",
         "/stage": "stage.html",
         "/admin": "admin.html",
         "/overlay": "overlay.html",
-    }.items():
+    }
+    # ".html" aliases so the same relative links work here and on static hosting
+    pages |= {f"/{page}": page for page in pages.values()}
+    for route, page in pages.items():
 
         def _page(page: str = page) -> FileResponse:
             return FileResponse(WEB_DIR / page)

@@ -1,11 +1,14 @@
-import { $, CaptionStream, CaptionView, params, store } from "./common.js";
+import { $, CaptionStream, CaptionView, DEMO, pageUrl, params, staticBanner, store, wsUrl } from "./common.js";
+
+staticBanner();
 
 const sessionIn = $("#session"), keyIn = $("#key");
 sessionIn.value = params.get("session") || store.get("stage:session", "");
 keyIn.value = params.get("key") || store.get("stage:key", "");
-if (params.get("key")) history.replaceState(null, "", `/stage?session=${encodeURIComponent(sessionIn.value)}`);
+if (params.get("key")) history.replaceState(null, "", pageUrl("stage", { session: sessionIn.value }));
 
 let ctx, stream, node, ws, preview, stopping = false, retry = 0;
+$("#open-audience").href = pageUrl("index", sessionIn.value ? { session: sessionIn.value } : {});
 const state = (text, live = false) => { $("#state").textContent = text; $("#state").classList.toggle("live", live); };
 
 async function listDevices() {
@@ -21,10 +24,9 @@ listDevices();
 navigator.mediaDevices?.addEventListener?.("devicechange", listDevices);
 
 function connectWs() {
-  const proto = location.protocol === "https:" ? "wss" : "ws";
   const q = new URLSearchParams({ key: keyIn.value.trim(), rate: "16000" });
   if ($("#takeover").checked || retry > 0) q.set("takeover", "1");
-  ws = new WebSocket(`${proto}://${location.host}/ws/ingest/${encodeURIComponent(sessionIn.value.trim())}?${q}`);
+  ws = new WebSocket(wsUrl(`/ws/ingest/${encodeURIComponent(sessionIn.value.trim())}?${q}`));
   ws.binaryType = "arraybuffer";
   ws.onopen = () => state("Conectando…");
   ws.onmessage = (e) => {
@@ -47,6 +49,7 @@ function connectWs() {
 
 async function start() {
   const session = sessionIn.value.trim(), key = keyIn.value.trim();
+  if (DEMO) return alert("Modo demo: para transmitir audio real conectá un servidor de CaptionLive (botón «Conectar a un servidor…» arriba). Mientras tanto, la vista de audiencia muestra una charla simulada.");
   if (!session || !key) return alert("Completá sesión y clave de ingesta.");
   store.set("stage:session", session); store.set("stage:key", key); store.set("stage:device", $("#device").value);
   stopping = false;
@@ -59,7 +62,7 @@ async function start() {
   });
   listDevices();
   ctx = new AudioContext();
-  await ctx.audioWorklet.addModule("/static/js/pcm-worklet.js");
+  await ctx.audioWorklet.addModule(new URL("./pcm-worklet.js", import.meta.url));
   const src = ctx.createMediaStreamSource(stream);
   node = new AudioWorkletNode(ctx, "pcm-worklet", { processorOptions: { targetRate: 16000 } });
   node.port.onmessage = ({ data }) => {
@@ -69,7 +72,7 @@ async function start() {
   src.connect(node);
   connectWs();
   $("#start").disabled = true; $("#stop").disabled = false;
-  $("#open-audience").href = `/?session=${encodeURIComponent(session)}`;
+  $("#open-audience").href = pageUrl("index", { session });
   preview?.close();
   const view = new CaptionView($("#preview"), { lang: "source", maxLines: 30 });
   view.onChange = () => ($("#preview").scrollTop = $("#preview").scrollHeight);

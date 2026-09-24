@@ -6,12 +6,13 @@
   <title>CaptionLive</title>
   <meta name="description" content="Subtítulos en vivo, en tu idioma.">
   <meta name="theme-color" content="#0f1115">
-  <link rel="icon" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="icon" href="static/favicon.svg">
+  <link rel="stylesheet" href="static/css/app.css">
+  <script src="static/config.js"></script>
 </head>
 <body>
   <header class="bar">
-    <a class="brand" href="/">Caption<span>Live</span></a>
+    <a class="brand" href="./">Caption<span>Live</span></a>
     <span id="title" class="muted"></span>
     <span id="live" class="badge live" hidden>En vivo</span>
     <span class="spacer"></span>
@@ -51,12 +52,12 @@
       </div>
       <div class="row">
         <span class="muted">Descargar transcripción:</span>
-        <a id="dl-txt" download>TXT</a> <a id="dl-srt" download>SRT</a> <a id="dl-vtt" download>VTT</a>
+        <button data-dl="txt">TXT</button><button data-dl="srt">SRT</button><button data-dl="vtt">VTT</button>
       </div>
       <div id="summary-out" class="summary"></div>
-      <div class="row"><button id="close-menu">Cerrar</button><span class="spacer"></span><a href="/">Otras sesiones</a></div>
+      <div class="row"><button id="close-menu">Cerrar</button><span class="spacer"></span><a href="./" id="others">Otras sesiones</a></div>
     </div>
   </dialog>
-  <script type="module" src="/static/js/audience.js"></script>
+  <script type="module" src="static/js/audience.js"></script>
 </body>
 </html>

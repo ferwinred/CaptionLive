@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Overlay · CaptionLive</title>
+  <link rel="icon" href="static/favicon.svg">
   <!-- OBS / vMix browser source. Transparent background, lower-third captions.
        Params: session, lang, lines (2), size (42), color (#fff), bg (rgba(0,0,0,.7)),
        pos (bottom|top), align (center|left), font, maxwidth (80), shadow (1) -->
@@ -20,9 +21,10 @@
   </style>
 </head>
 <body>
+  <script src="static/config.js"></script>
   <div id="box" class="hidden"></div>
   <script type="module">
-    import { CaptionStream, esc, params } from "/static/js/common.js";
+    import { CaptionStream, esc, params } from "./static/js/common.js";
     const p = (k, d) => params.get(k) ?? d;
     const box = document.getElementById("box");
     const lines = +p("lines", 2), lang = p("lang", "source");

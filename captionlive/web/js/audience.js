@@ -1,7 +1,9 @@
-import { $, api, applyTheme, CaptionStream, CaptionView, esc, params, store } from "./common.js";
+import { $, api, applyTheme, CaptionStream, CaptionView, downloadTranscript, esc, pageUrl, params, staticBanner, store } from "./common.js";
 
 const sessionId = params.get("session");
 applyTheme(store.get("theme", "dark"));
+staticBanner();
+for (const a of document.querySelectorAll('a[href="./"]')) a.href = pageUrl("index");
 
 if (!sessionId) showPicker();
 else showViewer(sessionId);
@@ -12,7 +14,7 @@ async function showPicker() {
     const sessions = await api("/api/sessions");
     $("#sessions").innerHTML = sessions.length
       ? sessions.map((s) => `
-        <a class="card" href="/?session=${encodeURIComponent(s.id)}">
+        <a class="card" href="${pageUrl("index", { session: s.id })}">
           <div class="row"><h3>${esc(s.title || s.id)}</h3><span class="spacer"></span>
             ${s.status.live ? '<span class="badge live">En vivo</span>' : '<span class="badge">Offline</span>'}</div>
           ${s.speaker ? `<div>${esc(s.speaker)}</div>` : ""}
@@ -27,7 +29,7 @@ async function showPicker() {
 
 async function showViewer(id) {
   const session = await api(`/api/sessions/${encodeURIComponent(id)}`).catch(() => null);
-  if (!session) { $("#picker").hidden = false; $("#sessions").innerHTML = '<p>Sesión no encontrada. <a href="/">Ver sesiones</a></p>'; return; }
+  if (!session) { $("#picker").hidden = false; $("#sessions").innerHTML = `<p>Sesión no encontrada. <a href="${pageUrl("index")}">Ver sesiones</a></p>`; return; }
   document.title = `${session.title || session.id} · CaptionLive`;
   $("#title").textContent = [session.title || session.id, session.speaker].filter(Boolean).join(" — ");
   $("#viewer").hidden = false; $("#toolbar").hidden = false;
@@ -72,7 +74,6 @@ async function showViewer(id) {
     const lang = langSel.value;
     store.set("lang:" + id, lang);
     const url = new URL(location); url.searchParams.set("lang", lang); history.replaceState(null, "", url);
-    for (const fmt of ["txt", "srt", "vtt"]) $(`#dl-${fmt}`).href = `/api/sessions/${encodeURIComponent(id)}/transcript.${fmt}?lang=${lang}`;
     const el = $("#captions");
     view = new CaptionView(el, { lang, showOriginal: $("#dual").checked, liveOriginal: $("#liveorig").checked });
     view.onChange = () => {
@@ -96,6 +97,7 @@ async function showViewer(id) {
   connect();
 
   const menu = $("#menu");
+  for (const b of document.querySelectorAll("[data-dl]")) b.onclick = () => downloadTranscript(id, langSel.value, b.dataset.dl);
   $("#more").onclick = () => menu.showModal();
   $("#close-menu").onclick = () => menu.close();
   $("#fullscreen").onclick = () => { menu.close(); document.documentElement.requestFullscreen?.(); };

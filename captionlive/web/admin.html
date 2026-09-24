@@ -4,12 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Producción · CaptionLive</title>
-  <link rel="icon" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="icon" href="static/favicon.svg">
+  <link rel="stylesheet" href="static/css/app.css">
+  <script src="static/config.js"></script>
 </head>
 <body>
   <header class="bar">
-    <a class="brand" href="/">Caption<span>Live</span></a>
+    <a class="brand" href="./">Caption<span>Live</span></a>
     <span class="muted">Panel de producción</span>
     <span class="spacer"></span>
     <span id="totals" class="muted kpi"></span>
@@ -49,6 +50,6 @@
     </section>
   </main>
   <dialog id="qr"><div id="qr-body" style="text-align:center"></div><div class="row"><span class="spacer"></span><button onclick="this.closest('dialog').close()">Cerrar</button></div></dialog>
-  <script type="module" src="/static/js/admin.js"></script>
+  <script type="module" src="static/js/admin.js"></script>
 </body>
 </html>
