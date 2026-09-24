@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Overlay · CaptionLive</title>
+  <!-- OBS / vMix browser source. Transparent background, lower-third captions.
+       Params: session, lang, lines (2), size (42), color (#fff), bg (rgba(0,0,0,.7)),
+       pos (bottom|top), align (center|left), font, maxwidth (80), shadow (1) -->
+  <style>
+    html, body { margin: 0; background: transparent; overflow: hidden; height: 100vh; }
+    #box {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      font-family: var(--font, "Inter", system-ui, sans-serif); font-weight: 600; line-height: 1.3;
+      padding: .3em .7em; border-radius: .3em; box-sizing: border-box;
+      transition: opacity .3s;
+    }
+    #box.hidden { opacity: 0; }
+    #box p { margin: 0; }
+    #box .interim { opacity: .85; }
+  </style>
+</head>
+<body>
+  <div id="box" class="hidden"></div>
+  <script type="module">
+    import { CaptionStream, esc, params } from "/static/js/common.js";
+    const p = (k, d) => params.get(k) ?? d;
+    const box = document.getElementById("box");
+    const lines = +p("lines", 2), lang = p("lang", "source");
+    Object.assign(box.style, {
+      fontSize: p("size", "42") + "px", color: p("color", "#ffffff"), background: p("bg", "rgba(0,0,0,.72)"),
+      textAlign: p("align", "center"), maxWidth: p("maxwidth", "80") + "vw", width: "max-content",
+      [p("pos", "bottom") === "top" ? "top" : "bottom"]: p("margin", "6") + "vh",
+      textShadow: p("shadow", "1") === "1" ? "0 2px 4px rgba(0,0,0,.8)" : "none",
+    });
+    if (p("font")) box.style.fontFamily = p("font");
+    let finals = [], interim = "", hideTimer;
+    const hideAfter = +p("hide", 8) * 1000;
+    function render() {
+      const rows = finals.slice(-lines).map((t) => `<p>${esc(t)}</p>`);
+      if (lang === "source" && interim) { rows.push(`<p class="interim">${esc(interim)}</p>`); }
+      box.innerHTML = rows.slice(-lines).join("");
+      box.classList.toggle("hidden", rows.length === 0);
+      clearTimeout(hideTimer);
+      if (hideAfter > 0) hideTimer = setTimeout(() => box.classList.add("hidden"), hideAfter);
+    }
+    new CaptionStream(p("session"), [lang], {
+      final: (ev) => { if (ev.lang !== lang) return; finals.push(ev.text); finals = finals.slice(-lines); if (lang === "source") interim = ""; render(); },
+      interim: (ev) => { if (lang === "source") { interim = ev.text; render(); } },
+    });
+  </script>
+</body>
+</html>

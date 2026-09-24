@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CaptionLive</title>
+  <meta name="description" content="Subtítulos en vivo, en tu idioma.">
+  <meta name="theme-color" content="#0f1115">
+  <link rel="icon" href="/static/favicon.svg">
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="/">Caption<span>Live</span></a>
+    <span id="title" class="muted"></span>
+    <span id="live" class="badge live" hidden>En vivo</span>
+    <span class="spacer"></span>
+    <div class="row toolbar" id="toolbar" hidden>
+      <select id="lang" aria-label="Idioma de los subtítulos"></select>
+      <select id="size" aria-label="Tamaño de letra">
+        <option value="22">A−</option><option value="32" selected>A</option><option value="44">A+</option><option value="60">A++</option>
+      </select>
+      <select id="theme" aria-label="Tema">
+        <option value="dark">Oscuro</option><option value="light">Claro</option><option value="contrast">Alto contraste</option>
+      </select>
+      <button id="more" aria-haspopup="dialog">Más…</button>
+    </div>
+  </header>
+
+  <main id="picker" class="wrap" hidden>
+    <h1>Elegí una sesión</h1>
+    <p class="muted">Subtítulos en tiempo real en el idioma original y traducidos.</p>
+    <div id="sessions" class="grid"></div>
+  </main>
+
+  <main id="viewer" hidden>
+    <div id="captions" class="captions" aria-live="polite" aria-atomic="false"></div>
+    <div id="empty" class="empty">Esperando que empiece la charla…</div>
+    <button id="follow" class="follow primary">↓ Seguir en vivo</button>
+  </main>
+
+  <dialog id="menu">
+    <h3>Opciones</h3>
+    <div style="display:grid;gap:12px">
+      <label style="flex-direction:row;display:flex;gap:8px;align-items:center;color:var(--text)"><input type="checkbox" id="dual"> Mostrar también el texto original</label>
+      <label style="flex-direction:row;display:flex;gap:8px;align-items:center;color:var(--text)"><input type="checkbox" id="liveorig" checked> Ver original en vivo mientras se traduce</label>
+      <label style="flex-direction:row;display:flex;gap:8px;align-items:center;color:var(--text)"><input type="checkbox" id="speak"> Leer en voz alta (síntesis del navegador)</label>
+      <div class="row">
+        <button id="summary">✨ Resumen de lo dicho hasta ahora</button>
+        <button id="fullscreen">Pantalla completa</button>
+      </div>
+      <div class="row">
+        <span class="muted">Descargar transcripción:</span>
+        <a id="dl-txt" download>TXT</a> <a id="dl-srt" download>SRT</a> <a id="dl-vtt" download>VTT</a>
+      </div>
+      <div id="summary-out" class="summary"></div>
+      <div class="row"><button id="close-menu">Cerrar</button><span class="spacer"></span><a href="/">Otras sesiones</a></div>
+    </div>
+  </dialog>
+  <script type="module" src="/static/js/audience.js"></script>
+</body>
+</html>
