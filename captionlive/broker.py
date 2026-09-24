@@ -244,7 +244,9 @@ class RedisBroker(Broker):
             await pipe.execute()
 
     async def history(self, session, lang, after_seq=0, limit=None):
-        raw = await self._redis.lrange(self._k("hist", session, lang), 0, -1)
+        # fast path for new viewers: only fetch the tail instead of the whole list
+        start = -limit if (limit and not after_seq) else 0
+        raw = await self._redis.lrange(self._k("hist", session, lang), start, -1)
         items = [CaptionEvent.model_validate_json(r) for r in raw]
         items = [e for e in items if e.seq > after_seq]
         return items[-limit:] if limit else items
