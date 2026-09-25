@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Escenario · CaptionLive</title>
+  <link rel="icon" href="static/favicon.svg">
+  <link rel="stylesheet" href="static/css/app.css">
+  <script src="static/config.js"></script>
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="./">Caption<span>Live</span></a>
+    <span class="muted">Escenario — envío de audio</span>
+    <span class="spacer"></span>
+    <span id="state" class="badge">Detenido</span>
+  </header>
+  <main class="wrap" style="display:grid;gap:16px">
+    <section class="card">
+      <div class="form">
+        <label>Sesión <input id="session" placeholder="main-stage" autocomplete="off"></label>
+        <label>Clave de ingesta <input id="key" type="password" autocomplete="off"></label>
+        <label class="full">Entrada de audio <select id="device"><option value="">Micrófono por defecto</option></select></label>
+        <div class="full checks">
+          <label><input type="checkbox" id="agc"> Control automático de ganancia</label>
+          <label><input type="checkbox" id="ns" checked> Supresión de ruido</label>
+          <label><input type="checkbox" id="takeover"> Reemplazar otra fuente activa</label>
+        </div>
+      </div>
+      <div class="row">
+        <button id="start" class="primary">▶ Empezar a transmitir</button>
+        <button id="stop" class="danger" disabled>■ Detener</button>
+        <span class="spacer"></span>
+        <div style="flex:1;max-width:320px" class="meter" title="Nivel de entrada"><i id="meter"></i></div>
+      </div>
+      <div class="row muted kpi" id="stats">—</div>
+      <p class="muted" style="margin:0;font-size:13px">Tip: para mejor calidad usá la salida de la consola de sonido (línea) en vez del micrófono de la notebook. Esta página debe quedar abierta durante la charla; si se corta la red, se reconecta sola.</p>
+    </section>
+    <section class="card">
+      <div class="row"><strong>Vista previa</strong><span class="spacer"></span><a id="open-audience" target="_blank">Abrir vista de audiencia ↗</a></div>
+      <div id="preview" class="preview captions"></div>
+    </section>
+  </main>
+  <script type="module" src="static/js/stage.js"></script>
+</body>
+</html>

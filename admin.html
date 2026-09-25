@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Producción · CaptionLive</title>
+  <link rel="icon" href="static/favicon.svg">
+  <link rel="stylesheet" href="static/css/app.css">
+  <script src="static/config.js"></script>
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="./">Caption<span>Live</span></a>
+    <span class="muted">Panel de producción</span>
+    <span class="spacer"></span>
+    <span id="totals" class="muted kpi"></span>
+    <button id="logout" hidden>Salir</button>
+  </header>
+  <main class="wrap" style="display:grid;gap:16px">
+    <section id="login" class="card" hidden>
+      <label>Token de administración (CL_ADMIN_TOKEN) <input id="token" type="password" autocomplete="current-password"></label>
+      <div class="row"><button id="enter" class="primary">Entrar</button><span id="login-err" class="err"></span></div>
+    </section>
+
+    <section id="panel" hidden style="display:grid;gap:16px">
+      <div class="card">
+        <div class="row"><strong>Sesiones</strong><span class="spacer"></span><button id="new" class="primary">+ Nueva sesión</button></div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Sesión</th><th>Estado</th><th>Nivel</th><th>Latencia</th><th>Audiencia</th><th>Errores</th><th>Costo est.</th><th>Enlaces</th><th></th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <form id="form" class="card" hidden>
+        <strong id="form-title">Nueva sesión</strong>
+        <div class="form">
+          <label>ID (URL) <input name="id" required pattern="[a-z0-9][a-z0-9-]*" placeholder="main-stage"></label>
+          <label>Título de la charla <input name="title" placeholder="Kubernetes en producción"></label>
+          <label>Orador/a <input name="speaker"></label>
+          <label>Sala / escenario <input name="room" placeholder="Escenario principal"></label>
+          <label>Idioma hablado <select name="source_lang"></select></label>
+          <div class="full"><div class="muted" style="font-size:14px;margin-bottom:6px">Idiomas de traducción</div><div id="targets" class="checks"></div></div>
+          <label class="full">Glosario: términos técnicos, productos y nombres propios (uno por línea). Mejora el reconocimiento y se mantienen sin traducir.
+            <textarea name="glossary" placeholder="Kubernetes&#10;Nerdearla&#10;eBPF&#10;Grafana Loki"></textarea></label>
+        </div>
+        <div class="row"><button class="primary" type="submit">Guardar</button><button type="button" id="cancel">Cancelar</button><span id="form-err" class="err"></span></div>
+      </form>
+    </section>
+  </main>
+  <dialog id="qr"><div id="qr-body" style="text-align:center"></div><div class="row"><span class="spacer"></span><button onclick="this.closest('dialog').close()">Cerrar</button></div></dialog>
+  <script type="module" src="static/js/admin.js"></script>
+</body>
+</html>
