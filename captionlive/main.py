@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import contextlib
+import hashlib
+import hmac
 import json
 import logging
 import secrets
@@ -11,6 +14,7 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import urlencode, urlsplit
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,6 +41,16 @@ BACKLOG = 30
 SUMMARY_TTL = 60.0
 
 
+def audience_url(public_url: str, backend: str, session_id: str, lang: str | None = None) -> str:
+    """Audience link for QR codes; points a statically hosted web app at this backend."""
+    backend = backend.rstrip("/")
+    base = public_url.rstrip("/") or backend
+    query = {"session": session_id, **({"lang": lang} if lang else {})}
+    if urlsplit(base).netloc != urlsplit(backend).netloc:
+        query["api"] = backend  # web app hosted elsewhere (GitHub Pages, Vercel...)
+    return f"{base}/?{urlencode(query)}"
+
+
 def load_sessions_file(path: str) -> list[dict]:
     import yaml
 
@@ -54,6 +68,11 @@ def create_app(
     broker = broker or create_broker(settings.broker, settings.redis_url, settings.history_size)
     asr_factory = asr_factory or (lambda s: create_asr(settings, s.source_lang, s.glossary))
 
+    def stable_key(session_id: str) -> str:
+        secret = (settings.ingest_secret or settings.admin_token).encode()
+        digest = hmac.new(secret, f"ingest:{session_id}".encode(), hashlib.sha256).digest()
+        return base64.urlsafe_b64encode(digest[:16]).decode().rstrip("=")
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         await broker.start()
@@ -62,6 +81,7 @@ def create_app(
             for raw in load_sessions_file(settings.sessions_file):
                 existing = await broker.get_session(str(raw.get("id", "")).lower())
                 data = {**(existing.model_dump() if existing else {}), **raw}
+                data.setdefault("ingest_key", stable_key(str(data["id"]).lower()))
                 await broker.save_session(Session(**data))
                 log.info("bootstrapped session %s", data["id"])
         if settings.admin_token == "change-me":
@@ -125,12 +145,15 @@ def create_app(
         return data
 
     # ------------------------------------------------------------------ pages
-    for route, page in {
+    pages = {
         "/": "index.html",
         "/stage": "stage.html",
         "/admin": "admin.html",
         "/overlay": "overlay.html",
-    }.items():
+    }
+    # ".html" aliases so the same relative links work here and on static hosting
+    pages |= {f"/{page}": page for page in pages.values()}
+    for route, page in pages.items():
 
         def _page(page: str = page) -> FileResponse:
             return FileResponse(WEB_DIR / page)
@@ -215,8 +238,7 @@ def create_app(
         import segno
 
         session = await get_session_or_404(session_id)
-        base = settings.public_url.rstrip("/") or str(request.base_url).rstrip("/")
-        url = f"{base}/?session={session.id}" + (f"&lang={lang}" if lang else "")
+        url = audience_url(settings.public_url, str(request.base_url), session.id, lang)
         svg = segno.make(url, error="m").svg_inline(scale=8, border=2, dark="#111", light="#fff")
         return Response(svg, media_type="image/svg+xml")
 
@@ -335,6 +357,8 @@ def create_app(
         data = body.model_dump()
         if existing:
             data = {**existing.model_dump(), **data}
+        else:
+            data["ingest_key"] = stable_key(body.id)
         session = Session(**data)
         await broker.save_session(session)
         return session.model_dump()

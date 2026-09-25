@@ -1,4 +1,6 @@
-import { $, api, esc } from "./common.js";
+import { $, api, apiUrl, DEMO, downloadTranscript, esc, pageUrl, staticBanner } from "./common.js";
+
+staticBanner();
 
 let token = sessionStorage.getItem("cl:admin") || "";
 let config, sessions = [];
@@ -27,7 +29,6 @@ function fillLangs() {
   $("#targets").innerHTML = opts.map(([c, n]) => `<label><input type="checkbox" value="${c}"> ${esc(n)}</label>`).join("");
 }
 
-const origin = () => (config.public_url || location.origin).replace(/\/$/, "");
 const fmtMs = (v) => (v == null ? "—" : `${v} ms`);
 
 function render() {
@@ -36,7 +37,7 @@ function render() {
   const cost = sessions.reduce((a, s) => a + (s.status.est_cost_usd || 0), 0);
   $("#totals").textContent = `${live.length}/${sessions.length} en vivo · ${audience} espectadores (este nodo) · US$ ${cost.toFixed(3)}`;
   $("#rows").innerHTML = sessions.map((s) => {
-    const st = s.status, base = origin(), id = encodeURIComponent(s.id);
+    const st = s.status, id = encodeURIComponent(s.id);
     const level = st.live ? Math.max(0, Math.min(100, (st.level_db + 60) / 60 * 100)) : 0;
     const silent = st.live && st.level_db < -55;
     const langs = s.languages.map((l) => l.code);
@@ -53,12 +54,12 @@ function render() {
           ${st.last_error ? `<div class="err" title="${esc(st.last_error)}">${esc(st.last_error.slice(0, 60))}</div>` : ""}</td>
       <td class="kpi">${st.est_cost_usd != null ? "US$ " + st.est_cost_usd.toFixed(3) : "—"}</td>
       <td><div class="links">
-        <a href="${base}/?session=${id}" target="_blank">Audiencia</a>
+        <a href="${pageUrl("index", { session: s.id })}" target="_blank">Audiencia</a>
         <a href="#" data-qr="${esc(s.id)}">QR</a>
-        <a href="${base}/stage?session=${id}&key=${encodeURIComponent(s.ingest_key)}" target="_blank">Escenario (con clave)</a>
-        <span>Overlay OBS/vMix: ${langs.map((l) => `<a href="${base}/overlay?session=${id}&lang=${l}" target="_blank">${l}</a>`).join(" ")}</span>
-        <span>Texto vMix: ${langs.map((l) => `<a href="${base}/api/sessions/${id}/now.txt?lang=${l}" target="_blank">${l}</a>`).join(" ")}</span>
-        <span>Exportar: ${langs.map((l) => `${l} <a href="/api/sessions/${id}/transcript.srt?lang=${l}">srt</a>/<a href="/api/sessions/${id}/transcript.vtt?lang=${l}">vtt</a>/<a href="/api/sessions/${id}/transcript.txt?lang=${l}">txt</a>`).join(" · ")}</span>
+        <a href="${pageUrl("stage", { session: s.id, key: s.ingest_key })}" target="_blank">Escenario (con clave)</a>
+        <span>Overlay OBS/vMix: ${langs.map((l) => `<a href="${pageUrl("overlay", { session: s.id, lang: l })}" target="_blank">${l}</a>`).join(" ")}</span>
+        ${DEMO ? "" : `<span>Texto vMix: ${langs.map((l) => `<a href="${apiUrl(`/api/sessions/${id}/now.txt?lang=${l}`)}" target="_blank">${l}</a>`).join(" ")}</span>`}
+        <span>Exportar: ${langs.map((l) => `${l} ${["srt", "vtt", "txt"].map((f) => `<a href="#" data-dl="${f}" data-sid="${esc(s.id)}" data-lang="${l}">${f}</a>`).join("/")}`).join(" · ")}</span>
         <code title="Clave de ingesta">key: ${esc(s.ingest_key)}</code>
       </div></td>
       <td><div class="row" style="flex-direction:column;align-items:stretch">
@@ -98,19 +99,25 @@ $("#form").onsubmit = async (e) => {
 };
 
 document.addEventListener("click", async (e) => {
+  const dl = e.target.closest("[data-dl]");
+  if (dl) { e.preventDefault(); return downloadTranscript(dl.dataset.sid, dl.dataset.lang, dl.dataset.dl); }
   const t = e.target.closest("[data-edit],[data-delete],[data-clear],[data-rotate],[data-qr]");
   if (!t) return;
   e.preventDefault();
   const id = t.dataset.edit || t.dataset.delete || t.dataset.clear || t.dataset.rotate || t.dataset.qr;
   const path = `/api/admin/sessions/${encodeURIComponent(id)}`;
   if (t.dataset.edit) openForm(sessions.find((s) => s.id === id));
+  try {
   if (t.dataset.delete && confirm(`¿Eliminar la sesión ${id} y su transcripción?`)) await api(path, { method: "DELETE", token });
   if (t.dataset.clear && confirm(`¿Borrar la transcripción de ${id}? (útil entre charlas)`)) await api(path + "/clear", { method: "POST", token });
   if (t.dataset.rotate && confirm("La fuente actual deberá usar la nueva clave. ¿Continuar?")) await api(path + "/rotate-key", { method: "POST", token });
   if (t.dataset.qr) {
-    $("#qr-body").innerHTML = `<img alt="QR" style="width:min(360px,80vw);background:#fff" src="/api/sessions/${encodeURIComponent(id)}/qr.svg"><p>${esc(origin())}/?session=${esc(id)}</p>`;
+    const link = pageUrl("index", { session: id });
+    $("#qr-body").innerHTML = (DEMO ? "<p>(El QR lo genera el servidor; en el demo solo se muestra el enlace.)</p>"
+      : `<img alt="QR" style="width:min(360px,80vw);background:#fff" src="${apiUrl(`/api/sessions/${encodeURIComponent(id)}/qr.svg`)}">`) + `<p>${esc(link)}</p>`;
     $("#qr").showModal();
   }
+  } catch (err) { alert(err.message); }
   refresh();
 });
 

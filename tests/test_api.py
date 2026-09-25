@@ -142,3 +142,26 @@ def test_second_ingest_is_rejected_unless_takeover(client):
             assert msg["type"] == "websocket.close" and msg["code"] == 4409
         with client.websocket_connect(f"/ws/ingest/main?key={key}&takeover=1") as third:
             assert third.receive_json()["type"] == "ready"
+
+
+def test_ingest_keys_are_stable_across_restarts(settings):
+    keys = []
+    for _ in range(2):  # two independent servers (e.g. Cloud Run instance restarts)
+        with TestClient(create_app(settings, translator=MockTranslator())) as c:
+            keys.append(create(c)["ingest_key"])
+            rotated = c.post("/api/admin/sessions/main/rotate-key", headers=AUTH).json()
+            assert rotated["ingest_key"] != keys[-1]
+    assert keys[0] == keys[1]
+    settings.ingest_secret = "other"
+    with TestClient(create_app(settings, translator=MockTranslator())) as c:
+        assert create(c)["ingest_key"] != keys[0]
+
+
+def test_audience_url_for_qr():
+    from captionlive.main import audience_url
+
+    assert audience_url("", "https://x.run.app/", "main") == "https://x.run.app/?session=main"
+    assert (
+        audience_url("https://ferwinred.github.io/CaptionLive/", "https://x.run.app/", "main", "es")
+        == "https://ferwinred.github.io/CaptionLive/?session=main&lang=es&api=https%3A%2F%2Fx.run.app"
+    )
