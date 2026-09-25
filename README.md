@@ -61,6 +61,13 @@ captionlive ingest --server https://captions.example.org --session main-stage --
   --input "srt://10.0.0.5:9000"            # o rtmp://, un archivo, o una placa de audio
 ```
 
+## Web (Next.js)
+
+`frontend/` contiene la web profesional (Next.js 16 + Tailwind 4): landing con salas en vivo, visor de
+subtítulos, consola de escenario, panel de producción y overlay OBS/vMix. Se despliega en Vercel
+(Root Directory = `frontend`). Ver [frontend/README.md](frontend/README.md). El backend sigue sirviendo
+además una versión liviana sin build en `/`, `/stage`, `/admin` y `/overlay`.
+
 ## Documentación
 
 - [Arquitectura y stack](docs/ARQUITECTURA.md) — por qué cada pieza, diagramas de flujo, escalabilidad, costos

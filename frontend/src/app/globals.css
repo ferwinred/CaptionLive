@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Design tokens (light) */
+:root {
+  --bg: oklch(0.985 0.003 250);
+  --surface: oklch(1 0 0);
+  --surface-2: oklch(0.965 0.005 250);
+  --border: oklch(0.91 0.008 250);
+  --fg: oklch(0.2 0.02 260);
+  --muted: oklch(0.52 0.02 260);
+  --brand: oklch(0.66 0.13 175);
+  --brand-fg: oklch(0.2 0.05 180);
+  --brand-soft: oklch(0.95 0.04 175);
+  --live: oklch(0.63 0.22 25);
+  --warn: oklch(0.77 0.16 75);
+  --ok: oklch(0.7 0.17 150);
+  --caption-size: 34px;
+}
+/* Dark */
+.dark {
+  color-scheme: dark;
+  --bg: oklch(0.155 0.015 260);
+  --surface: oklch(0.195 0.018 260);
+  --surface-2: oklch(0.235 0.02 260);
+  --border: oklch(0.3 0.02 260);
+  --fg: oklch(0.96 0.005 260);
+  --muted: oklch(0.7 0.02 260);
+  --brand: oklch(0.76 0.13 175);
+  --brand-fg: oklch(0.18 0.04 180);
+  --brand-soft: oklch(0.3 0.06 175);
+}
+/* High contrast (accessibility) */
+.contrast {
+  color-scheme: dark;
+  --bg: #000; --surface: #000; --surface-2: #111; --border: #fff;
+  --fg: #ffef00; --muted: #fff; --brand: #ffef00; --brand-fg: #000; --brand-soft: #333;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-brand-fg: var(--brand-fg);
+  --color-brand-soft: var(--brand-soft);
+  --color-live: var(--live);
+  --color-warn: var(--warn);
+  --color-ok: var(--ok);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-jb), ui-monospace, monospace;
+}
+
+html, body { background: var(--bg); color: var(--fg); }
+body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+::selection { background: var(--brand); color: var(--brand-fg); }
+
+@keyframes live-pulse { 0%, 100% { opacity: 1 } 50% { opacity: .35 } }
+.animate-live { animation: live-pulse 1.4s ease-in-out infinite; }
+
+@keyframes caption-in { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+.caption-in { animation: caption-in .25s ease-out; }
+
+.bg-grid {
+  background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse at top, #000 20%, transparent 70%);
+}
+
+dialog::backdrop { background: rgb(0 0 0 / .55); backdrop-filter: blur(2px); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
