@@ -129,7 +129,7 @@ python scripts/build_static.py --out site --api https://captions.example.org  # 
 - **GitHub Pages**: el workflow `.github/workflows/pages.yml` construye y publica en la rama
   `gh-pages` (activar en *Settings → Pages → Deploy from a branch → gh-pages*). La variable del
   repositorio `CAPTIONLIVE_API_URL` fija el backend por defecto.
-- **Vercel**: importar el repositorio; `vercel.json` ya define el build y la carpeta de salida.
+- **Vercel**: usar la web Next.js de `frontend/` (Root Directory = `frontend`; `frontend/vercel.json` fija el build). El sitio estático liviano se publica en GitHub Pages.
 
 El **backend no puede correr en Pages ni en funciones serverless** (Vercel/Netlify): necesita
 conexiones largas (WebSocket de audio de hasta horas, SSE) y un proceso vivo por sala.
